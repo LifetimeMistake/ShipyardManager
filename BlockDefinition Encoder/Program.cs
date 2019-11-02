@@ -33,22 +33,19 @@ namespace BlockDefinition_Encoder
             { "SolarCell", "SolarCell" }
         };
     }
-    public class BlockDefinition
+    public class BlockVariant
     {
-        public string TypeId;
         public string SubtypeId;
         public Dictionary<string, int> Components;
 
-        public BlockDefinition(string typeId, string subtypeId)
+        public BlockVariant(string subtypeId)
         {
-            TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
             SubtypeId = subtypeId ?? throw new ArgumentNullException(nameof(subtypeId));
             Components = new Dictionary<string, int>();
         }
 
-        public BlockDefinition(string typeId, string subtypeId, Dictionary<string, int> components) : this(typeId, subtypeId)
+        public BlockVariant(string subtypeId, Dictionary<string, int> components) : this(subtypeId)
         {
-            TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
             SubtypeId = subtypeId ?? throw new ArgumentNullException(nameof(subtypeId));
             Components = components ?? throw new ArgumentNullException(nameof(components));
             SimplifyDefinition();
@@ -89,21 +86,49 @@ namespace BlockDefinition_Encoder
             Components = ConvertedComponents;
         }
     }
+    public class BlockDefinition
+    {
+        public string TypeId;
+        public List<BlockVariant> BlockVariants;
+
+        public BlockDefinition(string typeId)
+        {
+            TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
+            BlockVariants = new List<BlockVariant>();
+        }
+
+        public BlockDefinition(string typeId, List<BlockVariant> blockVariants)
+        {
+            TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
+            BlockVariants = blockVariants ?? throw new ArgumentNullException(nameof(blockVariants));
+        }
+    }
     class Program
     {
         static void Main(string[] args)
         {
-            List<BlockDefinition> blocks = new List<BlockDefinition>();
-            BlockDefinition assembler = new BlockDefinition("Assembler", "LargeAssembler");
-            assembler.AddComponents("SteelPlate", 120);
-            assembler.AddComponents("Construction", 80);
-            assembler.AddComponents("Motor", 20);
-            assembler.AddComponents("MetalGrid", 10);
-            assembler.AddComponents("Computer", 160);
-            assembler.AddComponents("SteelPlate", 20);
-            assembler.ConvertComponentsToBlueprintDefinition();
-            blocks.Add(assembler);
-            Serialize(blocks);
+            List<BlockVariant> assembler_variants = new List<BlockVariant>();
+            BlockVariant LargeAssembler = new BlockVariant("LargeAssembler");
+            LargeAssembler.AddComponents("SteelPlate", 140);
+            LargeAssembler.AddComponents("Construction", 80);
+            LargeAssembler.AddComponents("Motor", 20);
+            LargeAssembler.AddComponents("Display", 10);
+            LargeAssembler.AddComponents("MetalGrid", 10);
+            LargeAssembler.AddComponents("Computer", 160);
+            LargeAssembler.AddComponents("SteelPlate", 20);
+            LargeAssembler.ConvertComponentsToBlueprintDefinition();
+            BlockVariant BasicAssembler = new BlockVariant("BasicAssembler");
+            BasicAssembler.AddComponents("SteelPlate", 60);
+            BasicAssembler.AddComponents("Construction", 40);
+            BasicAssembler.AddComponents("Motor", 10);
+            BasicAssembler.AddComponents("Display", 4);
+            BasicAssembler.AddComponents("Computer", 80);
+            BasicAssembler.AddComponents("SteelPlate", 20);
+            BasicAssembler.ConvertComponentsToBlueprintDefinition();
+            assembler_variants.Add(LargeAssembler);
+            assembler_variants.Add(BasicAssembler);
+            BlockDefinition definition = new BlockDefinition("Assembler", assembler_variants);
+            Serialize(new List<BlockDefinition>() { definition });
             Console.ReadLine();
         }
 
@@ -114,16 +139,23 @@ namespace BlockDefinition_Encoder
             TableString += ReferenceListToString(ReferenceList);
             foreach(BlockDefinition block in blockDefinitions)
             {
-                string blockTypeDefinition = $"{block.TypeId}*{block.SubtypeId}";
-                string blockComponentDefinition = "";
-                foreach(KeyValuePair<string,int> component in block.Components)
+                string blockTypeDefinition = $"{block.TypeId}";
+                string blockDefinitionSoFar = "";
+                blockDefinitionSoFar += $"${blockTypeDefinition}";
+                foreach(BlockVariant variant in block.BlockVariants)
                 {
-                    if (blockComponentDefinition == "")
-                        blockComponentDefinition += $"{ReferenceList[component.Key]}:{component.Value}";
-                    else
-                        blockComponentDefinition += $",{ReferenceList[component.Key]}:{component.Value}";
+                    string blockSubtypeDefinition = $"{variant.SubtypeId}";
+                    string blockComponentDefinition = "";
+                    foreach (KeyValuePair<string, int> component in variant.Components)
+                    {
+                        if (blockComponentDefinition == "")
+                            blockComponentDefinition += $"{ReferenceList[component.Key]}:{component.Value}";
+                        else
+                            blockComponentDefinition += $",{ReferenceList[component.Key]}:{component.Value}";
+                    }
+                    blockDefinitionSoFar += $"*{blockSubtypeDefinition}={blockComponentDefinition}";
                 }
-                TableString += $"${blockTypeDefinition}={blockComponentDefinition}";
+                TableString += blockDefinitionSoFar;
             }
             Console.WriteLine(TableString);
         }
@@ -133,10 +165,13 @@ namespace BlockDefinition_Encoder
             Dictionary<string, int> ReferenceList = new Dictionary<string, int>();
             foreach(BlockDefinition block in blockDefinitions)
             {
-                foreach(KeyValuePair<string,int> kvp in block.Components)
+                foreach(BlockVariant variant in block.BlockVariants)
                 {
-                    if (!ReferenceList.ContainsKey(kvp.Key))
-                        ReferenceList[kvp.Key] = ReferenceList.Count;
+                    foreach(KeyValuePair<string,int> kvp in variant.Components)
+                    {
+                        if (!ReferenceList.ContainsKey(kvp.Key))
+                            ReferenceList[kvp.Key] = ReferenceList.Count;
+                    }
                 }
             }
             ReferenceList.OrderBy(reference => reference.Value);
