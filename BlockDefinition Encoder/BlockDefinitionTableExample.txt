@@ -1,1 +1,7 @@
-SteelPlate*ConstructionComponent*LargeTube*MotorComponent*Display*ComputerComponent*InteriorPlate*RadioCommunicationComponent*DetectorComponent$MyProgrammableBlock*SmallProgrammableBlock=0:2,1:2,2:2,3:1,4:1,5:2*LargeProgrammableBlock=0:21,1:4,2:2,3:1,4:1,5:2$Projector*LargeProjector=0:21,1:4,2:2,3:1,5:2*SmallProjector=0:2,1:2,2:2,3:1,5:2$SensorBlock*SmallBlockSensor=6:5,1:5,5:6,7:4,8:6,0:2*LargeBlockSensor=6:5,1:5,5:6,7:4,8:6,0:2$SoundBlock*SmallBlockSoundBlock=6:4,1:6,5:3*LargeBlockSoundBlock=6:4,1:6,5:3$ButtonPanel*ButtonPanelLarge=6:10,1:20,5:20*ButtonPanelSmall=6:2,1:2,5:1$TimerBlock*TimerBlockLarge=6:6,1:30,5:5*TimerBlockSmall=6:2,1:3,5:1
+SteelPlate*ConstructionComponent*LargeTube*MotorComponent*MetalGrid*ComputerComponent*Display*MedicalComponent*BulletproofGlass*SmallTube*Superconductor*PowerCell$Refinery*LargeRefinery=0:1200,1:40,2:20,3:16,4:20,5:20*BlastFurnace=0:120,1:20,3:10,5:10$OxygenGenerator*(null)=0:120,1:5,2:2,3:4,5:5*OxygenGeneratorSmall=0:8,1:8,2:2,3:1,5:3$Assembler*LargeAssembler=0:140,1:80,3:20,6:10,4:10,5:160*BasicAssembler=0:80,1:40,3:10,6:4,5:80$SurvivalKit*SurvivalKitLarge=0:30,1:2,7:3,3:4,6:1,5:5*SurvivalKit=0:6,1:2,7:3,3:4,6:1,5:5$OxygenFarm*LargeBlockOxygenFarm=0:40,8:100,2:20,9:10,1:20,5:20$UpgradeModule*LargeProductivityModule=0:100,1:40,9:20,5:60,3:4*LargeEffectivenessModule=0:100,1:50,9:15,10:20,3:4*LargeEnergyModule=0:100,1:40,9:20,11:20,3:4
+
+
+
+SteelPlate*ConstructionComponent*MotorComponent*MetalGrid*ComputerComponent$Assembler*LargeAssembler=0:140,1:80,3:20,6:10,4:10,5:160*BasicAssembler=0:80,1:40,3:10,6:4,5:80
+SteelPlate*ConstructionComponent*MotorComponent*MetalGrid*ComputerComponent
+SteelPlate*ConstructionComponent*MotorComponent*MetalGrid*ComputerComponent$Assembler*LargeAssembler=0:140,1:80,2:20,3:10,4:160
