@@ -209,13 +209,22 @@ namespace Automatic_Shipyard__SE_
             Dictionary<string, int> totalComponents = new Dictionary<string, int>();
             foreach (var item in blocks)
             {
-                // blockInfo[0] is blueprint, blockInfo[1] is number of required item
                 string[] blockInfo = item.ToString().Trim(remove).Split(delimiters, StringSplitOptions.None);
+                try
+                {
+                    
 
-                string blockName = blockInfo[0];
-                int amount = Convert.ToInt32(blockInfo[1]);
+                    string blockName = blockInfo[0];
+                    int amount = Convert.ToInt32(blockInfo[1]);
 
-                BlueprintDefinitions.AddComponents(totalComponents, BlueprintDefinitions.GetBlockComponents(blockName), amount);
+                    BlueprintDefinitions.AddComponents(totalComponents, BlueprintDefinitions.GetBlockComponents(blockName), amount);
+                }
+                catch(Exception ex)
+                {
+                    GridProgram.Echo($"Error in GetRequiredComponent() at {blockInfo[0]}:{blockInfo[1]} => {ex.Message}");
+                }
+                // blockInfo[0] is blueprint, blockInfo[1] is number of required item
+                
             }
             string output = "";
             foreach (KeyValuePair<string, int> component in totalComponents)

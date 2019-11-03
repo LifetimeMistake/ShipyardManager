@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace BlockDefinition_Encoder
 {
@@ -89,15 +91,15 @@ namespace BlockDefinition_Encoder
     public class BlockDefinition
     {
         public string TypeId;
-        public List<BlockVariant> BlockVariants;
+        public Dictionary<string,BlockVariant> BlockVariants;
 
         public BlockDefinition(string typeId)
         {
             TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
-            BlockVariants = new List<BlockVariant>();
+            BlockVariants = new Dictionary<string,BlockVariant>();
         }
 
-        public BlockDefinition(string typeId, List<BlockVariant> blockVariants)
+        public BlockDefinition(string typeId, Dictionary<string,BlockVariant> blockVariants)
         {
             TypeId = typeId ?? throw new ArgumentNullException(nameof(typeId));
             BlockVariants = blockVariants ?? throw new ArgumentNullException(nameof(blockVariants));
@@ -107,29 +109,40 @@ namespace BlockDefinition_Encoder
     {
         static void Main(string[] args)
         {
-            List<BlockVariant> assembler_variants = new List<BlockVariant>();
-            BlockVariant LargeAssembler = new BlockVariant("LargeAssembler");
-            LargeAssembler.AddComponents("SteelPlate", 140);
-            LargeAssembler.AddComponents("Construction", 80);
-            LargeAssembler.AddComponents("Motor", 20);
-            LargeAssembler.AddComponents("Display", 10);
-            LargeAssembler.AddComponents("MetalGrid", 10);
-            LargeAssembler.AddComponents("Computer", 160);
-            LargeAssembler.AddComponents("SteelPlate", 20);
-            LargeAssembler.ConvertComponentsToBlueprintDefinition();
-            BlockVariant BasicAssembler = new BlockVariant("BasicAssembler");
-            BasicAssembler.AddComponents("SteelPlate", 60);
-            BasicAssembler.AddComponents("Construction", 40);
-            BasicAssembler.AddComponents("Motor", 10);
-            BasicAssembler.AddComponents("Display", 4);
-            BasicAssembler.AddComponents("Computer", 80);
-            BasicAssembler.AddComponents("SteelPlate", 20);
-            BasicAssembler.ConvertComponentsToBlueprintDefinition();
-            assembler_variants.Add(LargeAssembler);
-            assembler_variants.Add(BasicAssembler);
-            BlockDefinition definition = new BlockDefinition("Assembler", assembler_variants);
-            Serialize(new List<BlockDefinition>() { definition });
-            Console.ReadLine();
+            Dictionary<string, BlockDefinition> blockDefinitionCache = new Dictionary<string, BlockDefinition>();
+            foreach(string definition_file in Directory.GetFiles("./CubeBlocks"))
+            {
+                XDocument doc = XDocument.Load(definition_file);
+                XElement cubeblocks = doc.Descendants("Definitions").First().Descendants("CubeBlocks").First();
+                foreach (XElement block in cubeblocks.Nodes().Where(x => x.NodeType != System.Xml.XmlNodeType.Comment))
+                {
+                    string typeId = block.Descendants("TypeId").First().Value;
+                    string subtypeId = block.Descendants("SubtypeId").First().Value.Replace(" ", "");
+                    if (subtypeId == "") subtypeId = "(null)";
+                    BlockDefinition blockDefinition;
+                    if (blockDefinitionCache.ContainsKey(typeId))
+                        blockDefinition = blockDefinitionCache[typeId];
+                    else
+                        blockDefinition = new BlockDefinition(typeId);
+
+                    if (!blockDefinition.BlockVariants.ContainsKey(subtypeId))
+                    {
+                        BlockVariant variant = new BlockVariant(subtypeId);
+                        foreach (XElement component in block.Descendants("Components").Nodes().Where(x => x.NodeType != System.Xml.XmlNodeType.Comment))
+                        {
+                            string componentType = component.Attribute("Subtype").Value.Replace(" ", "");
+                            int Amount = int.Parse(component.Attribute("Count").Value);
+                            variant.AddComponents(componentType, Amount);
+                        }
+                        variant.ConvertComponentsToBlueprintDefinition();
+                        blockDefinition.BlockVariants.Add(subtypeId, variant);
+                    }
+
+                    blockDefinitionCache[typeId] = blockDefinition;
+                }
+            }
+            
+            Serialize(blockDefinitionCache.Values.ToList());
         }
 
         public static void Serialize(List<BlockDefinition> blockDefinitions)
@@ -142,11 +155,11 @@ namespace BlockDefinition_Encoder
                 string blockTypeDefinition = $"{block.TypeId}";
                 string blockDefinitionSoFar = "";
                 blockDefinitionSoFar += $"${blockTypeDefinition}";
-                foreach(BlockVariant variant in block.BlockVariants)
+                foreach(KeyValuePair<string,BlockVariant> variant in block.BlockVariants)
                 {
-                    string blockSubtypeDefinition = $"{variant.SubtypeId}";
+                    string blockSubtypeDefinition = $"{variant.Value.SubtypeId}";
                     string blockComponentDefinition = "";
-                    foreach (KeyValuePair<string, int> component in variant.Components)
+                    foreach (KeyValuePair<string, int> component in variant.Value.Components)
                     {
                         if (blockComponentDefinition == "")
                             blockComponentDefinition += $"{ReferenceList[component.Key]}:{component.Value}";
@@ -165,9 +178,9 @@ namespace BlockDefinition_Encoder
             Dictionary<string, int> ReferenceList = new Dictionary<string, int>();
             foreach(BlockDefinition block in blockDefinitions)
             {
-                foreach(BlockVariant variant in block.BlockVariants)
+                foreach(KeyValuePair<string,BlockVariant> variant in block.BlockVariants)
                 {
-                    foreach(KeyValuePair<string,int> kvp in variant.Components)
+                    foreach(KeyValuePair<string,int> kvp in variant.Value.Components)
                     {
                         if (!ReferenceList.ContainsKey(kvp.Key))
                             ReferenceList[kvp.Key] = ReferenceList.Count;
